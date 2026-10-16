@@ -1,0 +1,4 @@
+const viewNames={today:'Overview',tasks:'My tasks',habits:'Habits',insights:'Insights'};
+function navigate(){const view=location.hash.slice(1)||'today';const active=viewNames[view]?view:'today';document.querySelectorAll('nav a').forEach(a=>{a.classList.toggle('active',a.dataset.view===active);if(a.dataset.view===active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});document.querySelector('#breadcrumb').textContent=`Workspace / ${viewNames[active]}`;for(const name of ['tasks','habits','insights'])document.querySelector(`#${name}-panel`).hidden=active!=='today'&&active!==name;}
+addEventListener('hashchange',navigate);navigate();
+document.querySelector('#date-label').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
