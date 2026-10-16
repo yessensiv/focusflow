@@ -1,0 +1,17 @@
+/* Shared namespace, safe HTML and navigation. */
+window.FF=window.FF||{};
+(function(F){
+F.$=s=>document.querySelector(s);F.esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+F.uid=()=>globalThis.crypto?.randomUUID?.()||('ff-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+F.day=(d=new Date())=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+F.dateOffset=n=>{const d=new Date();d.setDate(d.getDate()+n);return F.day(d)};
+F.events={};F.on=(n,fn)=>(F.events[n]??=[]).push(fn);F.emit=(n,x)=>(F.events[n]||[]).forEach(fn=>fn(x));F.views={};F.view='today';
+F.icon=(name)=>{const paths={today:'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',timer:'M9 2h6m-3 0v3m7 2 2-2M12 9v4l3 2M21 13a9 9 0 1 1-18 0 9 9 0 0 1 18 0',habits:'M12 2C10 7 4 12 4 16a8 8 0 0 0 16 0c0-4-6-9-8-14Z',shelf:'M3 21h18M5 4h4v7l2 7H3l2-7Zm10 0h4v7l2 7h-8l2-7Z',settings:'M4 7h16M4 17h16M8 4v6m8 4v6',close:'m6 6 12 12M6 18 18 6',flame:'M12 2c1 7 8 8 7 14a7 7 0 0 1-14 0c0-3 1-5 3-7 0 4 4 5 4-7Z',arrow:'M5 12h14m-5-5 5 5-5 5',check:'m5 12 4 4L19 6',pause:'M8 5v14M16 5v14',play:'m8 4 12 8-12 8Z',plus:'M12 5v14M5 12h14'};return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="'+(paths[name]||paths.habits)+'"/></svg>'};
+F.toast=t=>{const el=F.$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(F.toastId);F.toastId=setTimeout(()=>el.classList.remove('show'),4500)};
+F.modal=(title,body)=>{document.querySelectorAll('dialog').forEach(d=>d.remove());const d=document.createElement('dialog');d.innerHTML='<div class="dialog-top"><h2 id="dialog-title">'+F.esc(title)+'</h2><button type="button" aria-label="Закрыть окно">'+F.icon('close')+'</button></div>'+body;d.setAttribute('aria-labelledby','dialog-title');document.body.append(d);d.querySelector('.dialog-top button').onclick=()=>d.close();d.addEventListener('close',()=>d.remove());d.showModal();return d};
+F.render=()=>{const main=F.$('#main');main.innerHTML='<section class="view" data-screen="'+F.view+'">'+(F.views[F.view]?.()||'<p class="mono">'+F.names[F.view]+'</p><h1>Здесь будет<br><em>новый ритм.</em></h1>')+'</section>';F.emit('render',F.view);F.dockPosition();};
+F.names={today:'Сегодня',timer:'Таймер',habits:'Привычки',shelf:'Полка',settings:'Настройки'};
+F.dockPosition=()=>{const b=document.querySelector('[data-view="'+F.view+'"]');if(!b)return;const pill=F.$('.dock-liquid');pill.style.width=b.offsetWidth+'px';pill.style.transform='translateX('+(b.offsetLeft-8)+'px)';};
+F.navigate=name=>{if(!F.names[name])name='today';F.view=name;document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===name)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});const run=()=>{F.render();};if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.startViewTransition(run);else run();};
+F.bootUI=()=>{F.$('.dock').insertAdjacentHTML('beforeend',Object.entries(F.names).map(([id,name])=>'<button data-view="'+id+'" aria-label="'+name+'">'+F.icon(id)+'<span>'+name+'</span></button>').join(''));F.$('.dock').onclick=e=>{const b=e.target.closest('[data-view]');if(b){location.hash=b.dataset.view;}};addEventListener('hashchange',()=>F.navigate(location.hash.slice(1)));addEventListener('resize',F.dockPosition);F.navigate(location.hash.slice(1)||'today');};
+})(window.FF);
