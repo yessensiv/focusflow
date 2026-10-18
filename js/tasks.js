@@ -11,3 +11,9 @@ document.addEventListener('click',e=>{const done=e.target.closest('[data-complet
 
 /* Editable task metadata. */
 document.addEventListener('change',e=>{const el=e.target;if(el.matches('[data-priority]'))FF.change(s=>{const t=s.tasks.find(t=>t.id===el.dataset.priority);if(t)t.priority=el.value;});if(el.matches('[data-estimate]')){if(!el.reportValidity())return;FF.change(s=>{const t=s.tasks.find(t=>t.id===el.dataset.estimate);if(t)t.estimate=Math.max(1,Math.min(20,Math.round(Number(el.value)||1)));});}});
+
+/* Reordering: pointer drag and equivalent keyboard buttons. */
+(function(F){
+F.moveTask=(id,target)=>F.change(s=>{const from=s.tasks.findIndex(t=>t.id===id);if(from<0)return;const [task]=s.tasks.splice(from,1);s.tasks.splice(Math.max(0,Math.min(s.tasks.length,target)),0,task);});
+F.on('render',()=>{const rows=[...document.querySelectorAll('[data-task]')];rows.forEach((row,i)=>{row.draggable=true;row.querySelector('.task-copy').insertAdjacentHTML('beforeend','<div class="reorder"><button data-move="up" aria-label="Выше: '+F.esc(F.state.tasks[i].title)+'" '+(i===0?'disabled':'')+'>↑</button><button data-move="down" aria-label="Ниже: '+F.esc(F.state.tasks[i].title)+'" '+(i===rows.length-1?'disabled':'')+'>↓</button></div>');row.ondragstart=e=>{e.dataTransfer.setData('text/plain',row.dataset.task);e.dataTransfer.effectAllowed='move';row.classList.add('dragging');};row.ondragend=()=>row.classList.remove('dragging');row.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move';};row.ondrop=e=>{e.preventDefault();F.moveTask(e.dataTransfer.getData('text/plain'),i);};row.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>{const id=row.dataset.task;F.moveTask(id,i+(b.dataset.move==='up'?-1:1));document.querySelector('[data-task="'+id+'"] [data-move="'+b.dataset.move+'"]')?.focus();});});});
+})(FF);
