@@ -1,4 +1,4 @@
-import {dayKey,lastDays,escapeHtml as esc,initialState,normalizeState,filterTasks} from './model.js';
+import {dayKey,lastDays,escapeHtml as esc,initialState,normalizeState,filterTasks,toggleHabitDay,habitStreak} from './model.js';
 const $=s=>document.querySelector(s);
 const storageKey='focusflow.v1';
 let state=initialState();let storageProblem='';
@@ -14,7 +14,12 @@ $('#task-form').onsubmit=e=>{e.preventDefault();const title=$('#task-title').val
 $('#task-title').oninput=()=>$('#task-title').setCustomValidity('');
 $('#tasks').onclick=e=>{const toggle=e.target.closest('[data-toggle]');const edit=e.target.closest('[data-edit]');const del=e.target.closest('[data-delete]');if(toggle){const t=state.tasks.find(t=>t.id===toggle.dataset.toggle);t.done=toggle.checked;t.completedAt=t.done?new Date().toISOString():null;save();render();}if(edit)openTask(edit.dataset.edit);if(del){const t=state.tasks.find(t=>t.id===del.dataset.delete);if(confirm(`Delete “${t.title}”?`)){state.tasks=state.tasks.filter(x=>x.id!==t.id);save();render();toast('Task deleted');}}};
 document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();});$('#search').oninput=e=>{query=e.target.value;renderTasks();};
-function render(){renderTasks();}
+function renderHabits(){const days=lastDays();$('#habits').innerHTML=state.habits.length?`<div class="habit-grid"><div class="habit-header"><span></span>${days.map(d=>`<span>${new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'narrow'})}</span>`).join('')}<span></span></div>${state.habits.map(h=>`<div class="habit-row"><div class="habit-name">${esc(h.title)}<small>${habitStreak(h)} day streak</small></div>${days.map(d=>`<button class="habit-day ${h.days.includes(d)?'checked':''} ${d===dayKey()?'today':''}" data-habit="${esc(h.id)}" data-day="${d}" aria-label="${esc(h.title)} on ${d}" aria-pressed="${h.days.includes(d)}">${h.days.includes(d)?'✓':'·'}</button>`).join('')}<button class="delete-habit" data-delete-habit="${esc(h.id)}" aria-label="Delete habit ${esc(h.title)}">×</button></div>`).join('')}</div>`:'<div class="empty">A few pages. A glass of water. A walk outside.<br>Add a small daily ritual and watch your rhythm grow.</div>';}
+$('#new-habit').onclick=()=>{$('#habit-title').value='';$('#habit-dialog').showModal();$('#habit-title').focus();};
+$('#habit-title').oninput=()=>$('#habit-title').setCustomValidity('');
+$('#habit-form').onsubmit=e=>{e.preventDefault();const title=$('#habit-title').value.trim();if(!title){$('#habit-title').setCustomValidity('Enter a habit name.');$('#habit-title').reportValidity();return;}state.habits.push({id:crypto.randomUUID(),title,days:[]});save();render();$('#habit-dialog').close();toast('Your new ritual is ready');};
+$('#habits').onclick=e=>{const b=e.target.closest('[data-habit]');const del=e.target.closest('[data-delete-habit]');if(b){state.habits=state.habits.map(h=>h.id===b.dataset.habit?toggleHabitDay(h,b.dataset.day):h);save();render();}if(del&&confirm('Delete this habit and its check-ins?')){state.habits=state.habits.filter(h=>h.id!==del.dataset.deleteHabit);save();render();}};
+function render(){renderTasks();renderHabits();}
 const viewNames={today:'Overview',tasks:'My tasks',habits:'Habits',insights:'Insights'};
 function navigate(){const view=location.hash.slice(1)||'today';const active=viewNames[view]?view:'today';document.querySelectorAll('nav a').forEach(a=>{a.classList.toggle('active',a.dataset.view===active);if(a.dataset.view===active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});document.querySelector('#breadcrumb').textContent=`Workspace / ${viewNames[active]}`;for(const name of ['tasks','habits','insights'])document.querySelector(`#${name}-panel`).hidden=active!=='today'&&active!==name;}
 addEventListener('hashchange',navigate);navigate();
