@@ -6,3 +6,6 @@ export function normalizeState(raw){if(!raw||raw.version!==1||!Array.isArray(raw
 export function filterTasks(tasks,filter='all',query=''){return tasks.filter(t=>(filter==='all'||(filter==='done'?t.done:!t.done))&&t.title.toLowerCase().includes(query.toLowerCase()));}
 export function toggleHabitDay(habit,day){return {...habit,days:habit.days.includes(day)?habit.days.filter(d=>d!==day):[...habit.days,day]};}
 export function habitStreak(habit,today=new Date()){const d=new Date(today);let count=0;if(!habit.days.includes(dayKey(d)))d.setDate(d.getDate()-1);while(habit.days.includes(dayKey(d))){count++;d.setDate(d.getDate()-1);}return count;}
+export function remainingSeconds(timer,now=Date.now()){return timer.running?Math.max(0,Math.ceil((timer.endsAt-now)/1000)):timer.remaining;}
+export function startTimer(timer,now=Date.now()){return {...timer,running:true,endsAt:now+timer.remaining*1000};}
+export function pauseTimer(timer,now=Date.now()){return {...timer,remaining:remainingSeconds(timer,now),running:false,endsAt:null};}
