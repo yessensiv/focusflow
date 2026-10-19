@@ -4,3 +4,4 @@
 .energy-panel{grid-row:1}.energy-panel h3{margin:6px 0 0}@media(max-width:700px){.energy-options{width:100%}.energy-options button{flex:1;padding:10px;font-size:13px}.task-copy{font-size:16px}}
 .task-meta select,.task-meta input{padding:5px 8px;font:11px var(--mono);border-color:var(--line);min-height:44px}.task-meta input{width:58px}.task-meta{align-items:center}.task-meta select{max-width:110px}
 .reorder{display:flex;margin-top:8px;gap:4px}.reorder button{font-size:15px;padding:5px 12px;min-width:44px;min-height:44px;border-color:var(--clear);background:var(--clear);color:var(--muted)}.task-row.dragging{opacity:.45}.task-row[draggable]{cursor:grab}.task-row[draggable]:active{cursor:grabbing}
+.mode-tabs{display:flex;justify-content:center;gap:4px;margin-bottom:20px}.mode-tabs button{font-size:12px;background:var(--clear);border-color:var(--clear)}.mode-tabs button[aria-pressed=true]{border-color:var(--edge);background:var(--raised)}
