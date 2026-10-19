@@ -21,3 +21,10 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&F.state.t
 
 /* Immersion hides surrounding UI but preserves a visible exit. */
 (function(F){F.immersion=on=>{if(on&&F.view!=='timer'){location.hash='timer';return;}document.body.classList.toggle('immersed',on);let exit=F.$('#exit-immersion');if(on&&!exit){exit=document.createElement('button');exit.id='exit-immersion';exit.textContent='Выйти · Esc';exit.onclick=()=>F.immersion(false);document.body.append(exit);exit.focus();}if(!on){exit?.remove();F.$('#immerse')?.focus();}};F.on('render',v=>{if(v==='timer'){F.$('#immerse').onclick=()=>F.immersion(true);}else F.immersion(false);});addEventListener('keydown',e=>{if(e.key==='Escape')F.immersion(false);});})(FF);
+
+/* Keyboard controls do not steal typing, dialogs or native button activation. */
+(function(F){
+F.typing=target=>!!target.closest('input,textarea,select,[contenteditable="true"],dialog');
+addEventListener('keydown',e=>{if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||F.typing(e.target))return;const k=e.key.toLowerCase();if(k===' '){if(e.target.closest('button,a'))return;e.preventDefault();if(F.beforeTimerStart&&!F.state.timer.running&&F.timeLeft()===F.state.timer.duration)F.beforeTimerStart();else F.timerToggle();}if(k==='r')F.resetTimer();if(k==='f'){if(F.view==='timer')F.immersion(!document.body.classList.contains('immersed'));else location.hash='timer';}});
+F.on('render',v=>{if(v!=='timer')return;const button=F.$('#timer-start');if(matchMedia('(pointer:fine) and (prefers-reduced-motion:no-preference)').matches){button.onpointermove=e=>{const r=button.getBoundingClientRect();button.style.transform='translate('+((e.clientX-r.left-r.width/2)*.08)+'px,'+((e.clientY-r.top-r.height/2)*.12)+'px)';};button.onpointerleave=()=>button.style.transform='';}F.$('.timer-controls').insertAdjacentHTML('afterend','<p class="mono muted hotkey-hint">Пробел — пауза · R — сброс · F — погружение</p>');});
+})(FF);
