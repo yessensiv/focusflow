@@ -9,3 +9,4 @@ export function habitStreak(habit,today=new Date()){const d=new Date(today);let 
 export function remainingSeconds(timer,now=Date.now()){return timer.running?Math.max(0,Math.ceil((timer.endsAt-now)/1000)):timer.remaining;}
 export function startTimer(timer,now=Date.now()){return {...timer,running:true,endsAt:now+timer.remaining*1000};}
 export function pauseTimer(timer,now=Date.now()){return {...timer,remaining:remainingSeconds(timer,now),running:false,endsAt:null};}
+export function weeklyFocus(sessions,date=new Date()){return lastDays(7,date).map(day=>({day,minutes:sessions.filter(s=>dayKey(new Date(s.finishedAt))===day).reduce((sum,s)=>sum+s.minutes,0)}));}
