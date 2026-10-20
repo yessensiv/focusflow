@@ -24,3 +24,7 @@ F.on('render',()=>{document.querySelectorAll('[data-habit-day]').forEach(b=>{con
 })(FF);
 
 document.addEventListener('click',e=>{const b=e.target.closest('[data-habit-mini]');if(b)FF.change(s=>{const h=s.habits.find(h=>h.id===b.dataset.habitMini);if(h&&FF.habitScheduled(h,FF.day()))h.checks[FF.day()]=h.checks[FF.day()]==='mini'?0:'mini';});});
+/* Chains point only to an earlier habit, so cycles cannot be created. */
+(function(F){
+F.on('render',v=>{if(v!=='habits')return;const habits=F.state.habits;F.$('#habit-chain').innerHTML='<div class="chain"><span class="mono muted">После кофе</span>'+habits.map((h,i)=>'<span aria-hidden="true">→</span><button data-habit-mark="'+F.esc(h.id)+'" class="'+(!F.habitDone(h,F.day())&&(!h.after||F.habitDone(habits.find(p=>p.id===h.after)||h,F.day()))?'next-drop':'')+'">'+F.esc(h.title)+'</button>').join('')+'<span aria-hidden="true">→</span><a href="#timer">1 сессия фокуса</a></div>';document.querySelectorAll('.habit-item').forEach((item,i)=>{const h=habits[i];item.insertAdjacentHTML('beforeend','<label class="chain-select"><span class="mono muted">Привязать начало</span><select data-after="'+F.esc(h.id)+'"><option value="">После кофе / самостоятельно</option>'+habits.slice(0,i).map(prev=>'<option value="'+F.esc(prev.id)+'" '+(h.after===prev.id?'selected':'')+'>После «'+F.esc(prev.title)+'»</option>').join('')+'</select></label>');});});document.addEventListener('change',e=>{if(e.target.matches('[data-after]'))F.change(s=>s.habits.find(h=>h.id===e.target.dataset.after).after=e.target.value||null);});
+})(FF);
