@@ -1,0 +1,4 @@
+/* Opening ritual: a clear intention, never a mandatory interruption. */
+(function(F){
+F.beforeTimerStart=()=>{if(F.state.timer.mode!=='focus'){F.timerToggle();return;}const minutes=F.state.timer.duration/60000;const d=F.modal('Одна ясная мысль.','<p class="muted">Что должно получиться за '+minutes+' минут?</p><form id="intention-form"><label>Ваше намерение<textarea name="intention" rows="3" maxlength="180" placeholder="Когда время закончится, я…"></textarea></label><div class="row"><button class="accent">Начать с намерением</button><button type="button" id="skip-intention">Пропустить</button></div></form>');const begin=text=>{F.state.timer.intention=text;d.close();F.timerToggle();F.render();};d.querySelector('form').onsubmit=e=>{e.preventDefault();begin(new FormData(e.target).get('intention').trim());};d.querySelector('#skip-intention').onclick=()=>begin('');};
+})(FF);
