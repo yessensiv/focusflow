@@ -9,3 +9,6 @@ F.on('render',v=>{if(v==='shelf'){const shelf=F.$('.shelf');shelf.scrollLeft=she
 
 /* Completion is a visible pour, with fade fallback for reduced motion. */
 FF.on('session-complete',()=>{document.body.classList.add('just-poured');setTimeout(()=>document.body.classList.remove('just-poured'),1600);});
+
+/* Readable session list complements the color-only physical metaphor. */
+(function(F){F.dayDetails=day=>{const sessions=F.sessionsFor(day),info=F.state.days[day];F.modal(new Date(day+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'long'}),'<p class="big-number">'+F.totalMinutes(sessions)+'<small> мин</small></p>'+(info?.word?'<p>Слово дня: «'+F.esc(info.word)+'»</p>':'')+'<ol class="session-list">'+(sessions.map(s=>'<li><span class="session-dot" style="--layer-color:var(--'+s.color+')"></span><div><strong>'+F.esc(s.title)+'</strong><p class="muted">'+s.minutes+' минут'+(s.rating?' · '+s.rating+'/5 · '+F.esc(s.mood):'')+(s.demo?' · демо':'')+'</p>'+(s.intention?'<small>«'+F.esc(s.intention)+'»</small>':'')+'</div></li>').join('')||'<li>Пока ни одной завершённой сессии.</li>')+'</ol>');};document.addEventListener('click',e=>{const b=e.target.closest('[data-day-detail]');if(b)F.dayDetails(b.dataset.dayDetail);});})(FF);
