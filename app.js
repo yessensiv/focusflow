@@ -1,40 +1,450 @@
-import {dayKey,lastDays,escapeHtml as esc,initialState,normalizeState,filterTasks,toggleHabitDay,habitStreak,remainingSeconds,startTimer,pauseTimer,weeklyFocus} from './model.js';
-const $=s=>document.querySelector(s);
-const storageKey='focusflow.v1';
-let state=initialState();let storageProblem='';
-try{const saved=localStorage.getItem(storageKey);if(saved)state=normalizeState(JSON.parse(saved));}catch{storageProblem='Saved data could not be loaded. This session is temporary; export it before leaving.';}
-let filter='all',query='',editingId=null;
-function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>$('#toast').classList.remove('visible'),4500);}
-function save(){if(storageProblem){$('#save-status').textContent='Temporary session — export to keep';return;}try{localStorage.setItem(storageKey,JSON.stringify(state));$('#save-status').textContent='● Saved on this device';}catch{$('#save-status').textContent='Not saved — export to keep';toast('Storage is unavailable. Export your data to keep it.');}}
-function renderTasks(){const tasks=filterTasks(state.tasks,filter,query);$('#nav-count').textContent=state.tasks.filter(t=>!t.done).length;$('#task-count').textContent=`${state.tasks.filter(t=>!t.done).length} remaining`;$('#tasks').innerHTML=tasks.length?tasks.map(t=>`<div class="task ${t.done?'completed':''}"><input class="check" type="checkbox" data-toggle="${esc(t.id)}" ${t.done?'checked':''} aria-label="Complete ${esc(t.title)}"><div class="task-content"><div class="task-title">${esc(t.title)}</div><div class="task-meta"><span class="tag ${esc(t.area)}">${esc(t.area)}</span>${t.due?`<span>${t.due<dayKey()&&!t.done?'Overdue · ':''}${esc(t.due)}</span>`:''}</div></div><span class="priority ${t.priority}">${t.priority==='High'?'● ':''}${t.priority}</span><div class="task-actions"><button data-edit="${esc(t.id)}" aria-label="Edit ${esc(t.title)}">✎</button><button data-delete="${esc(t.id)}" aria-label="Delete ${esc(t.title)}">×</button></div></div>`).join(''):`<div class="empty">${query?'No tasks match your search.':filter==='done'?'Your completed tasks will appear here.':filter==='active'?'All clear. Enjoy a moment of calm.':'Start with one small step. Add your first task below.'}</div>`;const selected=$('#focus-task').value;$('#focus-task').innerHTML='<option value="">Open focus session</option>'+state.tasks.filter(t=>!t.done).map(t=>`<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('');if(state.tasks.some(t=>t.id===selected&&!t.done))$('#focus-task').value=selected;}
-function openTask(id=null){editingId=id;const t=state.tasks.find(t=>t.id===id);$('#task-dialog-title').textContent=t?'Edit your next step':'A new next step';$('#task-title').value=t?.title||'';$('#task-area').value=t?.area||'Personal';$('#task-priority').value=t?.priority||'Normal';$('#task-due').value=t?.due||'';$('#task-dialog').showModal();$('#task-title').focus();}
-$('#new-task').onclick=()=>openTask();$('#inline-add').onclick=()=>openTask();
-document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
-$('#task-form').onsubmit=e=>{e.preventDefault();const title=$('#task-title').value.trim();if(!title){$('#task-title').setCustomValidity('Enter a task name.');$('#task-title').reportValidity();return;}const data={title,area:$('#task-area').value,priority:$('#task-priority').value,due:$('#task-due').value};if(editingId){Object.assign(state.tasks.find(t=>t.id===editingId),data);}else state.tasks.push({id:crypto.randomUUID(),...data,done:false});save();render();$('#task-dialog').close();toast(editingId?'Task updated':'A new step added');};
-$('#task-title').oninput=()=>$('#task-title').setCustomValidity('');
-$('#tasks').onclick=e=>{const toggle=e.target.closest('[data-toggle]');const edit=e.target.closest('[data-edit]');const del=e.target.closest('[data-delete]');if(toggle){const t=state.tasks.find(t=>t.id===toggle.dataset.toggle);t.done=toggle.checked;t.completedAt=t.done?new Date().toISOString():null;save();render();}if(edit)openTask(edit.dataset.edit);if(del){const t=state.tasks.find(t=>t.id===del.dataset.delete);if(confirm(`Delete “${t.title}”?`)){state.tasks=state.tasks.filter(x=>x.id!==t.id);save();render();toast('Task deleted');}}};
-document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();});$('#search').oninput=e=>{query=e.target.value;renderTasks();};
-function renderHabits(){const days=lastDays();$('#habits').innerHTML=state.habits.length?`<div class="habit-grid"><div class="habit-header"><span></span>${days.map(d=>`<span>${new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'narrow'})}</span>`).join('')}<span></span></div>${state.habits.map(h=>`<div class="habit-row"><div class="habit-name">${esc(h.title)}<small>${habitStreak(h)} day streak</small></div>${days.map(d=>`<button class="habit-day ${h.days.includes(d)?'checked':''} ${d===dayKey()?'today':''}" data-habit="${esc(h.id)}" data-day="${d}" aria-label="${esc(h.title)} on ${d}" aria-pressed="${h.days.includes(d)}">${h.days.includes(d)?'✓':'·'}</button>`).join('')}<button class="delete-habit" data-delete-habit="${esc(h.id)}" aria-label="Delete habit ${esc(h.title)}">×</button></div>`).join('')}</div>`:'<div class="empty">A few pages. A glass of water. A walk outside.<br>Add a small daily ritual and watch your rhythm grow.</div>';}
-$('#new-habit').onclick=()=>{$('#habit-title').value='';$('#habit-dialog').showModal();$('#habit-title').focus();};
-$('#habit-title').oninput=()=>$('#habit-title').setCustomValidity('');
-$('#habit-form').onsubmit=e=>{e.preventDefault();const title=$('#habit-title').value.trim();if(!title){$('#habit-title').setCustomValidity('Enter a habit name.');$('#habit-title').reportValidity();return;}state.habits.push({id:crypto.randomUUID(),title,days:[]});save();render();$('#habit-dialog').close();toast('Your new ritual is ready');};
-$('#habits').onclick=e=>{const b=e.target.closest('[data-habit]');const del=e.target.closest('[data-delete-habit]');if(b){state.habits=state.habits.map(h=>h.id===b.dataset.habit?toggleHabitDay(h,b.dataset.day):h);save();render();}if(del&&confirm('Delete this habit and its check-ins?')){state.habits=state.habits.filter(h=>h.id!==del.dataset.deleteHabit);save();render();}};
-function freshTimer(mode='focus'){return {id:crypto.randomUUID(),mode,remaining:state.lengths[mode]*60,duration:state.lengths[mode]*60,running:false,endsAt:null,taskTitle:'Open focus session'};}
-if(!state.timer)state.timer=freshTimer();
-function renderTimer(){const t=state.timer,remaining=remainingSeconds(t);$('#timer').textContent=`${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;$('#dial').style.setProperty('--progress',`${Math.min(360,360*(1-remaining/t.duration))}deg`);$('#start-timer').textContent=t.running?'Pause':remaining<t.duration?'Resume':t.mode==='focus'?'Start focus':'Start break';$('#focus-task').disabled=t.running||remaining<t.duration;$('#timer-caption').textContent=t.running?(t.mode==='focus'?'One thing. Your full attention.':'Breathe. Stretch. Reset.'):'Make this moment count';document.querySelectorAll('[data-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.mode===t.mode);b.setAttribute('aria-pressed',String(b.dataset.mode===t.mode));});document.title=t.running?`${$('#timer').textContent} — FocusFlow`:'FocusFlow — Make room for deep work';}
-function tick(){const t=state.timer;if(t.running&&remainingSeconds(t)===0){if(t.mode==='focus'&&!state.sessions.some(s=>s.id===t.id)){state.sessions.push({id:t.id,minutes:t.duration/60,taskTitle:t.taskTitle,finishedAt:new Date(t.endsAt).toISOString()});}const finished=t.mode;state.timer=freshTimer(finished==='focus'?'short':'focus');save();render();toast(finished==='focus'?'Session complete. Take a well-earned break.':'Break complete. Ready when you are.');}renderTimer();}
-$('#start-timer').onclick=()=>{tick();const t=state.timer;if(t.running)state.timer=pauseTimer(t);else {if(t.remaining===t.duration)t.taskTitle=$('#focus-task').selectedOptions[0]?.textContent||'Open focus session';state.timer=startTimer(t);}save();renderTimer();};
-$('#reset-timer').onclick=()=>{if((state.timer.running||state.timer.remaining<state.timer.duration)&&!confirm('Reset this session? Unfinished time will not be recorded.'))return;state.timer=freshTimer(state.timer.mode);save();renderTimer();};
-document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{if(b.dataset.mode===state.timer.mode)return;if((state.timer.running||state.timer.remaining<state.timer.duration)&&!confirm('Switch mode and discard the unfinished session?'))return;state.timer=freshTimer(b.dataset.mode);save();renderTimer();});
-for(const mode of ['focus','short','long'])$(`#${mode}-minutes`).value=state.lengths[mode];
-$('#save-timer-settings').onclick=()=>{if(state.timer.running||state.timer.remaining<state.timer.duration){toast('Finish or reset your current session first.');return;}const lengths={};for(const mode of ['focus','short','long']){const input=$(`#${mode}-minutes`);if(!input.reportValidity())return;const n=Number(input.value);if(!Number.isInteger(n)||n<1||n>(mode==='focus'?120:60)){toast('Enter a whole number within the allowed range.');return;}lengths[mode]=n;}state.lengths=lengths;state.timer=freshTimer(state.timer.mode);save();renderTimer();toast('Session lengths updated');};
-setInterval(tick,500);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
-function renderInsights(){const today=dayKey();const sessions=state.sessions.filter(s=>dayKey(new Date(s.finishedAt))===today);const minutes=sessions.reduce((n,s)=>n+s.minutes,0);const done=state.tasks.filter(t=>t.done).length;const habitsDone=state.habits.filter(h=>h.days.includes(today)).length;$('#summary').innerHTML=`<div class="stat"><div class="stat-top"><span class="stat-symbol">✓</span> Tasks completed</div><strong>${done}<span class="stat-total"> / ${state.tasks.length}</span></strong><small>${state.tasks.length?Math.round(done/state.tasks.length*100):0}% of your task list</small></div><div class="stat"><div class="stat-top"><span class="stat-symbol">◷</span> Focus time</div><strong>${minutes}<span class="stat-total"> min</span></strong><small>${sessions.length} sessions today</small></div><div class="stat"><div class="stat-top"><span class="stat-symbol">✦</span> Daily rituals</div><strong>${habitsDone}<span class="stat-total"> / ${state.habits.length}</span></strong><small>${state.habits.length?'A little consistency, every day':'Make your first small commitment'}</small></div>`;$('#session-count').textContent=`${sessions.length} focus sessions today`;const week=weeklyFocus(state.sessions);const max=Math.max(25,...week.map(d=>d.minutes));$('#chart').innerHTML=`<div class="chart" role="img" aria-label="Focus minutes for the last seven days: ${week.map(d=>`${d.day}: ${d.minutes} minutes`).join(', ')}">${week.map(d=>`<div class="bar-column"><span class="bar-value">${d.minutes}m</span><div class="bar" style="height:${d.minutes/max*100}px"></div><span>${new Date(d.day+'T12:00:00').toLocaleDateString('en-US',{weekday:'short'})}</span></div>`).join('')}</div>`;$('#history').innerHTML=state.sessions.length?`<div class="history">${state.sessions.slice(-5).reverse().map(s=>`<div class="history-row"><span>${esc(s.taskTitle||'Open focus session')}</span><span>${s.minutes} min · ${new Date(s.finishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>`).join('')}</div>`:'<div class="empty chart-empty">Your first completed focus session will start the story.</div>';}
-$('#export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`focusflow-${dayKey()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Your data has been exported');};
-let renderedDay=dayKey();setInterval(()=>{if(renderedDay!==dayKey()){renderedDay=dayKey();$('#date-label').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});render();}},30000);
-function render(){renderTasks();renderHabits();renderTimer();renderInsights();}
-const viewNames={today:'Overview',tasks:'My tasks',habits:'Habits',insights:'Insights'};
-function navigate(){const view=location.hash.slice(1)||'today';const active=viewNames[view]?view:'today';document.querySelectorAll('nav a').forEach(a=>{a.classList.toggle('active',a.dataset.view===active);if(a.dataset.view===active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});document.querySelector('#breadcrumb').textContent=`Workspace / ${viewNames[active]}`;for(const name of ['tasks','habits','insights'])document.querySelector(`#${name}-panel`).hidden=active!=='today'&&active!==name;}
-addEventListener('hashchange',navigate);navigate();
-document.querySelector('#date-label').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-render();if(storageProblem){$('#save-status').textContent='Temporary session — export to keep';toast(storageProblem);}
+import {
+  dayKey,
+  lastDays,
+  escapeHtml as esc,
+  initialState,
+  normalizeState,
+  filterTasks,
+  toggleHabitDay,
+  habitStreak,
+  remainingSeconds,
+  startTimer,
+  pauseTimer,
+  weeklyFocus,
+} from "./model.js";
+const $ = (s) => document.querySelector(s);
+const icon = (name) =>
+  `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const storageKey = "focusflow.v1";
+let state = initialState();
+let storageProblem = "";
+try {
+  const saved = localStorage.getItem(storageKey);
+  if (saved) state = normalizeState(JSON.parse(saved));
+} catch {
+  storageProblem =
+    "Saved data could not be loaded. This session is temporary; export it before leaving.";
+}
+let filter = "all",
+  query = "",
+  editingId = null;
+function toast(message) {
+  $("#toast").textContent = message;
+  $("#toast").classList.add("visible");
+  clearTimeout(toast.timeout);
+  toast.timeout = setTimeout(
+    () => $("#toast").classList.remove("visible"),
+    4500,
+  );
+}
+function save() {
+  if (storageProblem) {
+    $("#save-status").textContent = "Temporary session — export to keep";
+    return;
+  }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    $("#save-status").textContent = "● Saved on this device";
+  } catch {
+    $("#save-status").textContent = "Not saved — export to keep";
+    toast("Storage is unavailable. Export your data to keep it.");
+  }
+}
+function renderTasks() {
+  const tasks = filterTasks(state.tasks, filter, query);
+  $("#nav-count").textContent = state.tasks.filter((t) => !t.done).length;
+  $("#task-count").textContent =
+    `${state.tasks.filter((t) => !t.done).length} remaining`;
+  $("#tasks").innerHTML = tasks.length
+    ? tasks
+        .map(
+          (t) =>
+            `<div class="task ${t.done ? "completed" : ""}"><input class="check" type="checkbox" data-toggle="${esc(t.id)}" ${t.done ? "checked" : ""} aria-label="Complete ${esc(t.title)}"><div class="task-content"><div class="task-title">${esc(t.title)}</div><div class="task-meta"><span class="tag ${esc(t.area)}">${esc(t.area)}</span>${t.due ? `<span>${t.due < dayKey() && !t.done ? "Overdue · " : ""}${esc(t.due)}</span>` : ""}</div></div><span class="priority ${t.priority}">${t.priority === "High" ? "● " : ""}${t.priority}</span><div class="task-actions"><button data-edit="${esc(t.id)}" aria-label="Edit ${esc(t.title)}">${icon("edit")}</button><button data-delete="${esc(t.id)}" aria-label="Delete ${esc(t.title)}">${icon("close")}</button></div></div>`,
+        )
+        .join("")
+    : `<div class="empty">${query ? "No tasks match your search." : filter === "done" ? "Your completed tasks will appear here." : filter === "active" ? "All clear. Enjoy a moment of calm." : "Start with one small step. Add your first task below."}</div>`;
+  const selected = $("#focus-task").value;
+  $("#focus-task").innerHTML =
+    '<option value="">Open focus session</option>' +
+    state.tasks
+      .filter((t) => !t.done)
+      .map((t) => `<option value="${esc(t.id)}">${esc(t.title)}</option>`)
+      .join("");
+  if (state.tasks.some((t) => t.id === selected && !t.done))
+    $("#focus-task").value = selected;
+}
+function openTask(id = null) {
+  editingId = id;
+  const t = state.tasks.find((t) => t.id === id);
+  $("#task-dialog-title").textContent = t
+    ? "Edit your next step"
+    : "A new next step";
+  $("#task-title").value = t?.title || "";
+  $("#task-area").value = t?.area || "Personal";
+  $("#task-priority").value = t?.priority || "Normal";
+  $("#task-due").value = t?.due || "";
+  $("#task-dialog").showModal();
+  $("#task-title").focus();
+}
+$("#new-task").onclick = () => openTask();
+$("#inline-add").onclick = () => openTask();
+document
+  .querySelectorAll("[data-close]")
+  .forEach(
+    (b) => (b.onclick = () => document.getElementById(b.dataset.close).close()),
+  );
+$("#task-form").onsubmit = (e) => {
+  e.preventDefault();
+  const title = $("#task-title").value.trim();
+  if (!title) {
+    $("#task-title").setCustomValidity("Enter a task name.");
+    $("#task-title").reportValidity();
+    return;
+  }
+  const data = {
+    title,
+    area: $("#task-area").value,
+    priority: $("#task-priority").value,
+    due: $("#task-due").value,
+  };
+  if (editingId) {
+    Object.assign(
+      state.tasks.find((t) => t.id === editingId),
+      data,
+    );
+  } else state.tasks.push({ id: crypto.randomUUID(), ...data, done: false });
+  save();
+  render();
+  $("#task-dialog").close();
+  toast(editingId ? "Task updated" : "A new step added");
+};
+$("#task-title").oninput = () => $("#task-title").setCustomValidity("");
+$("#tasks").onclick = (e) => {
+  const toggle = e.target.closest("[data-toggle]");
+  const edit = e.target.closest("[data-edit]");
+  const del = e.target.closest("[data-delete]");
+  if (toggle) {
+    const t = state.tasks.find((t) => t.id === toggle.dataset.toggle);
+    t.done = toggle.checked;
+    t.completedAt = t.done ? new Date().toISOString() : null;
+    save();
+    render();
+  }
+  if (edit) openTask(edit.dataset.edit);
+  if (del) {
+    const t = state.tasks.find((t) => t.id === del.dataset.delete);
+    if (confirm(`Delete “${t.title}”?`)) {
+      state.tasks = state.tasks.filter((x) => x.id !== t.id);
+      save();
+      render();
+      toast("Task deleted");
+    }
+  }
+};
+document.querySelectorAll("[data-filter]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      filter = b.dataset.filter;
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((x) => x.classList.toggle("selected", x === b));
+      renderTasks();
+    }),
+);
+$("#search").oninput = (e) => {
+  query = e.target.value;
+  renderTasks();
+};
+function renderHabits() {
+  const days = lastDays();
+  $("#habits").innerHTML = state.habits.length
+    ? `<div class="habit-grid"><div class="habit-header"><span></span>${days.map((d) => `<span>${new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "narrow" })}</span>`).join("")}<span></span></div>${state.habits.map((h) => `<div class="habit-row"><div class="habit-name">${esc(h.title)}<small>${habitStreak(h)} day streak</small></div>${days.map((d) => `<button class="habit-day ${h.days.includes(d) ? "checked" : ""} ${d === dayKey() ? "today" : ""}" data-habit="${esc(h.id)}" data-day="${d}" aria-label="${esc(h.title)} on ${d}" aria-pressed="${h.days.includes(d)}">${h.days.includes(d) ? "✓" : "·"}</button>`).join("")}<button class="delete-habit" data-delete-habit="${esc(h.id)}" aria-label="Delete habit ${esc(h.title)}">${icon("close")}</button></div>`).join("")}</div>`
+    : `<div class="empty habit-empty"><strong>Small habits. Lasting change.</strong><p>Choose a starting point, or create your own ritual.</p><div class="habit-suggestions">${["Read 10 pages", "Move for 15 minutes", "Drink water"].map((title) => `<button data-suggest-habit="${title}">+ ${title}</button>`).join("")}</div></div>`;
+}
+$("#new-habit").onclick = () => {
+  $("#habit-title").value = "";
+  $("#habit-dialog").showModal();
+  $("#habit-title").focus();
+};
+$("#habit-title").oninput = () => $("#habit-title").setCustomValidity("");
+$("#habit-form").onsubmit = (e) => {
+  e.preventDefault();
+  const title = $("#habit-title").value.trim();
+  if (!title) {
+    $("#habit-title").setCustomValidity("Enter a habit name.");
+    $("#habit-title").reportValidity();
+    return;
+  }
+  state.habits.push({ id: crypto.randomUUID(), title, days: [] });
+  save();
+  render();
+  $("#habit-dialog").close();
+  toast("Your new ritual is ready");
+};
+$("#habits").onclick = (e) => {
+  const suggestion = e.target.closest("[data-suggest-habit]");
+  if (suggestion) {
+    state.habits.push({
+      id: crypto.randomUUID(),
+      title: suggestion.dataset.suggestHabit,
+      days: [],
+    });
+    save();
+    render();
+    toast("Your new ritual is ready");
+  }
+  const b = e.target.closest("[data-habit]");
+  const del = e.target.closest("[data-delete-habit]");
+  if (b) {
+    state.habits = state.habits.map((h) =>
+      h.id === b.dataset.habit ? toggleHabitDay(h, b.dataset.day) : h,
+    );
+    save();
+    render();
+  }
+  if (del && confirm("Delete this habit and its check-ins?")) {
+    state.habits = state.habits.filter((h) => h.id !== del.dataset.deleteHabit);
+    save();
+    render();
+  }
+};
+function freshTimer(mode = "focus") {
+  return {
+    id: crypto.randomUUID(),
+    mode,
+    remaining: state.lengths[mode] * 60,
+    duration: state.lengths[mode] * 60,
+    running: false,
+    endsAt: null,
+    taskTitle: "Open focus session",
+  };
+}
+if (!state.timer) state.timer = freshTimer();
+function renderTimer() {
+  const t = state.timer,
+    remaining = remainingSeconds(t);
+  $("#timer").textContent =
+    `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
+  $("#dial").style.setProperty(
+    "--progress",
+    `${Math.min(360, 360 * (1 - remaining / t.duration))}deg`,
+  );
+  $("#start-timer").textContent = t.running
+    ? "Pause"
+    : remaining < t.duration
+      ? "Resume"
+      : t.mode === "focus"
+        ? "Start focus"
+        : "Start break";
+  $("#focus-task").disabled = t.running || remaining < t.duration;
+  $("#timer-caption").textContent = t.running
+    ? t.mode === "focus"
+      ? "One thing. Your full attention."
+      : "Breathe. Stretch. Reset."
+    : "Make this moment count";
+  document.querySelectorAll("[data-mode]").forEach((b) => {
+    b.classList.toggle("selected", b.dataset.mode === t.mode);
+    b.setAttribute("aria-pressed", String(b.dataset.mode === t.mode));
+  });
+  document.title = t.running
+    ? `${$("#timer").textContent} — FocusFlow`
+    : "FocusFlow — Make room for deep work";
+}
+function tick() {
+  const t = state.timer;
+  if (t.running && remainingSeconds(t) === 0) {
+    if (t.mode === "focus" && !state.sessions.some((s) => s.id === t.id)) {
+      state.sessions.push({
+        id: t.id,
+        minutes: t.duration / 60,
+        taskTitle: t.taskTitle,
+        finishedAt: new Date(t.endsAt).toISOString(),
+      });
+    }
+    const finished = t.mode;
+    state.timer = freshTimer(finished === "focus" ? "short" : "focus");
+    save();
+    render();
+    toast(
+      finished === "focus"
+        ? "Session complete. Take a well-earned break."
+        : "Break complete. Ready when you are.",
+    );
+  }
+  renderTimer();
+}
+$("#start-timer").onclick = () => {
+  tick();
+  const t = state.timer;
+  if (t.running) state.timer = pauseTimer(t);
+  else {
+    if (t.remaining === t.duration)
+      t.taskTitle =
+        $("#focus-task").selectedOptions[0]?.textContent ||
+        "Open focus session";
+    state.timer = startTimer(t);
+  }
+  save();
+  renderTimer();
+};
+$("#reset-timer").onclick = () => {
+  if (
+    (state.timer.running || state.timer.remaining < state.timer.duration) &&
+    !confirm("Reset this session? Unfinished time will not be recorded.")
+  )
+    return;
+  state.timer = freshTimer(state.timer.mode);
+  save();
+  renderTimer();
+};
+document.querySelectorAll("[data-mode]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      if (b.dataset.mode === state.timer.mode) return;
+      if (
+        (state.timer.running || state.timer.remaining < state.timer.duration) &&
+        !confirm("Switch mode and discard the unfinished session?")
+      )
+        return;
+      state.timer = freshTimer(b.dataset.mode);
+      save();
+      renderTimer();
+    }),
+);
+for (const mode of ["focus", "short", "long"])
+  $(`#${mode}-minutes`).value = state.lengths[mode];
+$("#save-timer-settings").onclick = () => {
+  if (state.timer.running || state.timer.remaining < state.timer.duration) {
+    toast("Finish or reset your current session first.");
+    return;
+  }
+  const lengths = {};
+  for (const mode of ["focus", "short", "long"]) {
+    const input = $(`#${mode}-minutes`);
+    if (!input.reportValidity()) return;
+    const n = Number(input.value);
+    if (!Number.isInteger(n) || n < 1 || n > (mode === "focus" ? 120 : 60)) {
+      toast("Enter a whole number within the allowed range.");
+      return;
+    }
+    lengths[mode] = n;
+  }
+  state.lengths = lengths;
+  state.timer = freshTimer(state.timer.mode);
+  save();
+  renderTimer();
+  toast("Session lengths updated");
+};
+setInterval(tick, 500);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) tick();
+});
+function renderInsights() {
+  const today = dayKey();
+  const sessions = state.sessions.filter(
+    (s) => dayKey(new Date(s.finishedAt)) === today,
+  );
+  const minutes = sessions.reduce((n, s) => n + s.minutes, 0);
+  const done = state.tasks.filter((t) => t.done).length;
+  const habitsDone = state.habits.filter((h) => h.days.includes(today)).length;
+  $("#summary").innerHTML =
+    `<div class="stat"><div class="stat-top"><span class="stat-symbol">${icon("check")}</span> Tasks completed</div><strong>${done}<span class="stat-total"> / ${state.tasks.length}</span></strong><small>${state.tasks.length ? Math.round((done / state.tasks.length) * 100) : 0}% of your task list</small></div><div class="stat"><div class="stat-top"><span class="stat-symbol">${icon("clock")}</span> Focus time</div><strong>${minutes}<span class="stat-total"> min</span></strong><small>${sessions.length} sessions today</small></div><div class="stat"><div class="stat-top"><span class="stat-symbol">${icon("habit")}</span> Daily rituals</div><strong>${habitsDone}<span class="stat-total"> / ${state.habits.length}</span></strong><small>${state.habits.length ? "A little consistency, every day" : "Make your first small commitment"}</small></div>`;
+  $("#session-count").textContent = `${sessions.length} focus sessions today`;
+  const week = weeklyFocus(state.sessions);
+  const max = Math.max(25, ...week.map((d) => d.minutes));
+  $("#chart").innerHTML =
+    `<div class="chart" role="img" aria-label="Focus minutes for the last seven days: ${week.map((d) => `${d.day}: ${d.minutes} minutes`).join(", ")}">${week.map((d) => `<div class="bar-column"><span class="bar-value">${d.minutes}m</span><div class="bar" style="height:${(d.minutes / max) * 100}px"></div><span>${new Date(d.day + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" })}</span></div>`).join("")}</div>`;
+  $("#history").innerHTML = state.sessions.length
+    ? `<div class="history">${state.sessions
+        .slice(-5)
+        .reverse()
+        .map(
+          (s) =>
+            `<div class="history-row"><span>${esc(s.taskTitle || "Open focus session")}</span><span>${s.minutes} min · ${new Date(s.finishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span></div>`,
+        )
+        .join("")}</div>`
+    : '<div class="empty chart-empty">Your first completed focus session will start the story.</div>';
+}
+$("#export").onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `focusflow-${dayKey()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Your data has been exported");
+};
+let renderedDay = dayKey();
+setInterval(() => {
+  if (renderedDay !== dayKey()) {
+    renderedDay = dayKey();
+    $("#date-label").textContent = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+    render();
+  }
+}, 30000);
+function render() {
+  renderTasks();
+  renderHabits();
+  renderTimer();
+  renderInsights();
+}
+const viewNames = {
+  today: "Overview",
+  tasks: "My tasks",
+  habits: "Habits",
+  insights: "Insights",
+};
+function navigate() {
+  const view = location.hash.slice(1) || "today";
+  const active = viewNames[view] ? view : "today";
+  document.querySelectorAll("nav a").forEach((a) => {
+    a.classList.toggle("active", a.dataset.view === active);
+    if (a.dataset.view === active) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+  document.querySelector("#breadcrumb").textContent =
+    `Workspace / ${viewNames[active]}`;
+  for (const name of ["tasks", "habits", "insights"])
+    document.querySelector(`#${name}-panel`).hidden =
+      active !== "today" && active !== name;
+}
+addEventListener("hashchange", navigate);
+navigate();
+document.querySelector("#date-label").textContent =
+  new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+render();
+if (storageProblem) {
+  $("#save-status").textContent = "Temporary session — export to keep";
+  toast(storageProblem);
+}
+$("#mobile-export").onclick = () => $("#export").click();
+
+function setFocusMode(expanded) {
+  document.body.classList.toggle("focus-only", expanded);
+  $("#focus-mode").textContent = expanded
+    ? "Back to workspace ↙"
+    : "Expand ↗";
+  $("#focus-mode").setAttribute("aria-pressed", String(expanded));
+  $("#focus-mode").focus();
+}
+$("#focus-mode").onclick = () =>
+  setFocusMode(!document.body.classList.contains("focus-only"));
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("focus-only"))
+    setFocusMode(false);
+});
+$("#take-break").onclick = () => {
+  $("[data-mode=short]").click();
+  $("#start-timer").focus();
+};
