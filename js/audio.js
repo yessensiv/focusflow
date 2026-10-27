@@ -1,7 +1,90 @@
 /* Procedural droplet sound. Audio is unlocked only by a user gesture. */
-(function(F){let context,ambient;
-F.unlockAudio=async()=>{try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;context??=new Audio();if(context.state==='suspended')await context.resume();}catch(e){F.toast('Звук недоступен в этом браузере.');}};
-F.playDrop=()=>{if(!F.state.settings.sound||!context||context.state!=='running')return;try{[0,.13,.28].forEach((delay,i)=>{const o=context.createOscillator(),g=context.createGain(),t=context.currentTime+delay;o.type='sine';o.frequency.setValueAtTime(980-i*180,t);o.frequency.exponentialRampToValueAtTime(220,t+.18);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.13,t+.012);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g).connect(context.destination);o.start(t);o.stop(t+.32);});}catch(e){/* Audio must never block completion. */}};
-F.ambientAudio=()=>{if(ambient){try{ambient.stop();}catch(e){}ambient=null;}if(!F.state.settings.ambient||!F.state.timer?.running||!context||context.state!=='running')return;const buffer=context.createBuffer(1,context.sampleRate*2,context.sampleRate),data=buffer.getChannelData(0);let last=0;for(let i=0;i<data.length;i++){last=(last+Math.random()*.02-.01)*.995;data[i]=last;}ambient=context.createBufferSource();ambient.buffer=buffer;ambient.loop=true;const gain=context.createGain();gain.gain.value=.1;ambient.connect(gain).connect(context.destination);ambient.start();};
-F.on('timer-toggle',async running=>{if(running)await F.unlockAudio();F.ambientAudio();});F.on('timer-complete',()=>{F.ambientAudio();F.playDrop();if(F.state.settings.notifications&&'Notification'in window&&Notification.permission==='granted'){try{new Notification('FocusFlow',{body:'Сессия завершена. Пора сделать выдох.'});}catch(e){F.toast('Сессия завершена. Уведомление браузера недоступно.');}}});
+(function (F) {
+  let context, ambient;
+  F.unlockAudio = async () => {
+    try {
+      const Audio = window.AudioContext || window.webkitAudioContext;
+      if (!Audio) return;
+      context ??= new Audio();
+      if (context.state === "suspended") await context.resume();
+    } catch (e) {
+      F.toast("Звук недоступен в этом браузере.");
+    }
+  };
+  F.playDrop = () => {
+    if (!F.state.settings.sound || !context || context.state !== "running")
+      return;
+    try {
+      [0, 0.13, 0.28].forEach((delay, i) => {
+        const o = context.createOscillator(),
+          g = context.createGain(),
+          t = context.currentTime + delay;
+        o.type = "sine";
+        o.frequency.setValueAtTime(980 - i * 180, t);
+        o.frequency.exponentialRampToValueAtTime(220, t + 0.18);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.exponentialRampToValueAtTime(0.13, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        o.connect(g).connect(context.destination);
+        o.start(t);
+        o.stop(t + 0.32);
+      });
+    } catch (e) {
+      /* Audio must never block completion. */
+    }
+  };
+  F.ambientAudio = () => {
+    if (ambient) {
+      try {
+        ambient.stop();
+      } catch (e) {}
+      ambient = null;
+    }
+    if (
+      !F.state.settings.ambient ||
+      !F.state.timer?.running ||
+      !context ||
+      context.state !== "running"
+    )
+      return;
+    const buffer = context.createBuffer(
+        1,
+        context.sampleRate * 2,
+        context.sampleRate,
+      ),
+      data = buffer.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < data.length; i++) {
+      last = (last + Math.random() * 0.02 - 0.01) * 0.995;
+      data[i] = last;
+    }
+    ambient = context.createBufferSource();
+    ambient.buffer = buffer;
+    ambient.loop = true;
+    const gain = context.createGain();
+    gain.gain.value = 0.1;
+    ambient.connect(gain).connect(context.destination);
+    ambient.start();
+  };
+  F.on("timer-toggle", async (running) => {
+    if (running) await F.unlockAudio();
+    F.ambientAudio();
+  });
+  F.on("timer-complete", () => {
+    F.ambientAudio();
+    F.playDrop();
+    if (
+      F.state.settings.notifications &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
+      try {
+        new Notification("FocusFlow", {
+          body: "Сессия завершена. Пора сделать выдох.",
+        });
+      } catch (e) {
+        F.toast("Сессия завершена. Уведомление браузера недоступно.");
+      }
+    }
+  });
 })(FF);

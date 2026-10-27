@@ -1,30 +1,79 @@
 <!doctype html>
-<html lang="ru" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="FocusFlow — лаборатория фокуса. Собирайте внимание по капле."><title>FocusFlow — лаборатория фокуса</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300..800&family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Onest:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/timer.css">
-<link rel="stylesheet" href="css/habits.css">
-<link rel="stylesheet" href="css/shelf.css">
-<!-- styles --></head><body><svg class="filter-library" aria-hidden="true"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -8" result="goo"/><feComposite in="SourceGraphic" in2="goo" operator="atop"/></filter></defs></svg><a class="skip" href="#main">К содержимому</a><div class="ambient" aria-hidden="true"></div>
-<header class="topbar"><a class="brand" href="#today"><svg viewBox="0 0 32 40" aria-hidden="true"><path d="M16 2C13 9 2 18 2 25a14 14 0 0 0 28 0C30 18 19 9 16 2Z"/></svg>focusflow<span class="brand-dot">®</span></a><span class="mono">Лаборатория фокуса</span><button id="palette-open" hidden aria-label="Открыть команды">⌘ K</button></header>
-<main id="main" tabindex="-1"></main><div id="toast" role="status" aria-live="polite"></div>
-<nav class="dock" aria-label="Основные экраны"><span class="dock-liquid" aria-hidden="true"></span></nav>
-<script src="js/ui.js"></script>
-<script src="js/main.js"></script>
-<script src="js/state.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/seed.js"></script>
-<script src="js/today.js"></script>
-<script src="js/tasks.js"></script>
-<script src="js/quickadd.js"></script>
-<script src="js/timer.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/habits.js"></script>
-<script src="js/rituals.js"></script>
-<script src="js/shelf.js"></script>
-<script src="js/parking.js"></script>
-<!-- scripts --></body></html>
+<html lang="ru" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="FocusFlow — лаборатория фокуса. Собирайте внимание по капле."
+    />
+    <title>FocusFlow — лаборатория фокуса</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300..800&family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Onest:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/timer.css" />
+    <link rel="stylesheet" href="css/habits.css" />
+    <link rel="stylesheet" href="css/shelf.css" />
+    <!-- styles -->
+  </head>
+  <body>
+    <svg class="filter-library" aria-hidden="true">
+      <defs>
+        <filter id="goo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -8"
+            result="goo"
+          />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs></svg
+    ><a class="skip" href="#main">К содержимому</a>
+    <div class="ambient" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#today"
+        ><svg viewBox="0 0 32 40" aria-hidden="true">
+          <path
+            d="M16 2C13 9 2 18 2 25a14 14 0 0 0 28 0C30 18 19 9 16 2Z"
+          /></svg
+        >focusflow<span class="brand-dot">®</span></a
+      ><span class="mono">Лаборатория фокуса</span
+      ><button id="palette-open" hidden aria-label="Открыть команды">
+        ⌘ K
+      </button>
+    </header>
+    <main id="main" tabindex="-1"></main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <nav class="dock" aria-label="Основные экраны">
+      <span class="dock-liquid" aria-hidden="true"></span>
+    </nav>
+    <script src="js/ui.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/seed.js"></script>
+    <script src="js/today.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/quickadd.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/habits.js"></script>
+    <script src="js/rituals.js"></script>
+    <script src="js/shelf.js"></script>
+    <script src="js/parking.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/main.js"></script>
+    <!-- scripts -->
+  </body>
+</html>

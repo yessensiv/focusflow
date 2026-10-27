@@ -1,26 +1,322 @@
 /* Daily vessels share one volume scale: a full flask is 240 focused minutes. */
-(function(F){
-F.sessionsFor=day=>F.state.sessions.filter(s=>s.day===day);F.flaskLayers=(day,total)=>{const sessions=F.sessionsFor(day);return '<div class="flask-layers" style="height:'+Math.min(100,total/240*100)+'%">'+sessions.map(s=>'<div class="flask-layer" style="flex:'+s.minutes+';--layer-color:var(--'+s.color+')" title="'+F.esc(s.title)+' · '+s.minutes+' мин"></div>').join('')+'</div>';};
-F.flask=(day,large=false)=>{const total=F.totalMinutes(F.sessionsFor(day)),word=F.state.days[day]?.word;return '<div class="flask-wrap '+(large?'large':'')+'"><span class="flask-neck"></span>'+(word?'<span class="flask-cork">'+F.esc(word)+'</span>':'')+'<div class="day-flask glass">'+F.flaskLayers(day,total)+'<div class="flask-etch" aria-hidden="true"><i>240</i><i>180</i><i>120</i><i>60</i></div>'+(large?'<div class="flask-caption"><span class="mono">Сегодня в сосуде</span><strong>'+total+'</strong><span class="mono">минут внимания</span></div>':'')+'</div></div>';};
-F.shelfWidgets={};F.views.shelf=()=>'<div class="screen-header"><div><p class="mono muted">Внимание не исчезает</p><h1>Оно<br><em>остаётся.</em></h1></div><p class="muted">День за днём. Слой за слоем.<br>Ваша коллекция присутствия.</p></div>'+(F.state.demo?'<p class="demo-note mono">Включает демонстрационные сессии · очистка в настройках</p>':'')+'<div class="shelf" tabindex="0" aria-label="Коллекция дней, прокручивается горизонтально">'+Array.from({length:21},(_,i)=>F.dateOffset(i-20)).map(day=>'<button class="shelf-day" data-day-detail="'+day+'" aria-label="'+day+': '+F.totalMinutes(F.sessionsFor(day))+' минут">'+F.flask(day)+'<span class="mono">'+new Date(day+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+'</span><small>'+F.totalMinutes(F.sessionsFor(day))+' мин</small></button>').join('')+'</div>'+Object.values(F.shelfWidgets).map(fn=>fn()).join('');
-F.todayVessel=()=>'<div class="day-vessel-caption mono">Каждая минута<br>принимает форму</div>'+F.flask(F.day(),true)+'<p class="mono muted vessel-foot">'+(F.today().closed?'День сохранён':'Сосуд открыт для нового')+'</p>';
-F.on('render',v=>{if(v==='shelf'){const shelf=F.$('.shelf');shelf.scrollLeft=shelf.scrollWidth;}});
+(function (F) {
+  F.sessionsFor = (day) => F.state.sessions.filter((s) => s.day === day);
+  F.flaskLayers = (day, total) => {
+    const sessions = F.sessionsFor(day);
+    return (
+      '<div class="flask-layers" style="height:' +
+      Math.min(100, (total / 240) * 100) +
+      '%">' +
+      sessions
+        .map(
+          (s) =>
+            '<div class="flask-layer" style="flex:' +
+            s.minutes +
+            ";--layer-color:var(--" +
+            s.color +
+            ')" title="' +
+            F.esc(s.title) +
+            " · " +
+            s.minutes +
+            ' мин"></div>',
+        )
+        .join("") +
+      "</div>"
+    );
+  };
+  F.flask = (day, large = false) => {
+    const total = F.totalMinutes(F.sessionsFor(day)),
+      word = F.state.days[day]?.word;
+    return (
+      '<div class="flask-wrap ' +
+      (large ? "large" : "") +
+      '"><span class="flask-neck"></span>' +
+      (word ? '<span class="flask-cork">' + F.esc(word) + "</span>" : "") +
+      '<div class="day-flask glass">' +
+      F.flaskLayers(day, total) +
+      '<div class="flask-etch" aria-hidden="true"><i>240</i><i>180</i><i>120</i><i>60</i></div>' +
+      (large
+        ? '<div class="live-pour" aria-hidden="true"></div><div class="flask-caption"><span class="mono">Сегодня в сосуде</span><strong>' +
+          total +
+          '</strong><span class="mono">минут внимания</span></div>'
+        : "") +
+      "</div></div>"
+    );
+  };
+  F.shelfWidgets = {};
+  F.views.shelf = () =>
+    '<div class="screen-header"><div><p class="mono muted">Внимание не исчезает</p><h1>Оно<br><em>остаётся.</em></h1></div><p class="muted">День за днём. Слой за слоем.<br>Ваша коллекция присутствия.</p></div>' +
+    (F.state.demo
+      ? '<p class="demo-note mono">Включает демонстрационные сессии · очистка в настройках</p>'
+      : "") +
+    '<div class="shelf" tabindex="0" aria-label="Коллекция дней, прокручивается горизонтально">' +
+    Array.from({ length: 21 }, (_, i) => F.dateOffset(i - 20))
+      .map(
+        (day) =>
+          '<button class="shelf-day" data-day-detail="' +
+          day +
+          '" aria-label="' +
+          day +
+          ": " +
+          F.totalMinutes(F.sessionsFor(day)) +
+          ' минут">' +
+          F.flask(day) +
+          '<span class="mono">' +
+          new Date(day + "T12:00:00").toLocaleDateString("ru-RU", {
+            day: "numeric",
+            month: "short",
+          }) +
+          "</span><small>" +
+          F.totalMinutes(F.sessionsFor(day)) +
+          " мин</small></button>",
+      )
+      .join("") +
+    "</div>" +
+    Object.values(F.shelfWidgets)
+      .map((fn) => fn())
+      .join("");
+  F.todayVessel = () =>
+    '<div class="day-vessel-caption mono">Каждая минута<br>принимает форму</div>' +
+    F.flask(F.day(), true) +
+    '<p class="mono muted vessel-foot">' +
+    (F.today().closed ? "День сохранён" : "Сосуд открыт для нового") +
+    "</p>";
+  F.on("render", (v) => {
+    if (v === "shelf") {
+      const shelf = F.$(".shelf");
+      shelf.scrollLeft = shelf.scrollWidth;
+    }
+  });
 })(FF);
 
 /* Completion is a visible pour, with fade fallback for reduced motion. */
-FF.on('session-complete',()=>{document.body.classList.add('just-poured');setTimeout(()=>document.body.classList.remove('just-poured'),1600);});
+FF.on("session-complete", () => {
+  document.body.classList.add("just-poured");
+  setTimeout(() => document.body.classList.remove("just-poured"), 1600);
+});
 
 /* Readable session list complements the color-only physical metaphor. */
-(function(F){F.dayDetails=day=>{const sessions=F.sessionsFor(day),info=F.state.days[day];F.modal(new Date(day+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'long'}),'<p class="big-number">'+F.totalMinutes(sessions)+'<small> мин</small></p>'+(info?.word?'<p>Слово дня: «'+F.esc(info.word)+'»</p>':'')+'<ol class="session-list">'+(sessions.map(s=>'<li><span class="session-dot" style="--layer-color:var(--'+s.color+')"></span><div><strong>'+F.esc(s.title)+'</strong><p class="muted">'+s.minutes+' минут'+(s.rating?' · '+s.rating+'/5 · '+F.esc(s.mood):'')+(s.demo?' · демо':'')+'</p>'+(s.intention?'<small>«'+F.esc(s.intention)+'»</small>':'')+'</div></li>').join('')||'<li>Пока ни одной завершённой сессии.</li>')+'</ol>');};document.addEventListener('click',e=>{const b=e.target.closest('[data-day-detail]');if(b)F.dayDetails(b.dataset.dayDetail);});})(FF);
+(function (F) {
+  F.dayDetails = (day) => {
+    const sessions = F.sessionsFor(day),
+      info = F.state.days[day];
+    F.modal(
+      new Date(day + "T12:00:00").toLocaleDateString("ru-RU", {
+        day: "numeric",
+        month: "long",
+      }),
+      '<p class="big-number">' +
+        F.totalMinutes(sessions) +
+        "<small> мин</small></p>" +
+        (info?.word ? "<p>Слово дня: «" + F.esc(info.word) + "»</p>" : "") +
+        '<ol class="session-list">' +
+        (sessions
+          .map(
+            (s) =>
+              '<li><span class="session-dot" style="--layer-color:var(--' +
+              s.color +
+              ')"></span><div><strong>' +
+              F.esc(s.title) +
+              '</strong><p class="muted">' +
+              s.minutes +
+              " минут" +
+              (s.rating ? " · " + s.rating + "/5 · " + F.esc(s.mood) : "") +
+              (s.demo ? " · демо" : "") +
+              "</p>" +
+              (s.intention
+                ? "<small>«" + F.esc(s.intention) + "»</small>"
+                : "") +
+              "</div></li>",
+          )
+          .join("") || "<li>Пока ни одной завершённой сессии.</li>") +
+        "</ol>",
+    );
+  };
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-day-detail]");
+    if (b) F.dayDetails(b.dataset.dayDetail);
+  });
+})(FF);
 
 /* Hero figures are different scales, not equal dashboard cards. */
-FF.shelfWidgets.stats=()=>{const sessions=FF.state.sessions,minutes=FF.totalMinutes(sessions),days=new Set(sessions.map(s=>s.day)).size;return '<section class="hero-stats"><div><span class="mono muted">Часов присутствия</span><strong>'+Math.floor(minutes/60)+'<em>ч</em></strong><small>'+minutes%60+' минут сверху</small></div><div><span class="mono muted">Завершённых сессий</span><strong>'+sessions.length+'</strong></div><div><span class="mono muted">Дней с фокусом</span><strong>'+days+'</strong></div></section>';};
+FF.shelfWidgets.stats = () => {
+  const sessions = FF.state.sessions,
+    minutes = FF.totalMinutes(sessions),
+    days = new Set(sessions.map((s) => s.day)).size;
+  return (
+    '<section class="hero-stats"><div><span class="mono muted">Часов присутствия</span><strong>' +
+    Math.floor(minutes / 60) +
+    "<em>ч</em></strong><small>" +
+    (minutes % 60) +
+    ' минут сверху</small></div><div><span class="mono muted">Завершённых сессий</span><strong>' +
+    sessions.length +
+    '</strong></div><div><span class="mono muted">Дней с фокусом</span><strong>' +
+    days +
+    "</strong></div></section>"
+  );
+};
 
 /* Accessible SVG: title + textual daily values + 7/30-day range. */
-(function(F){F.chartRange=7;F.shelfWidgets.chart=()=>{const days=Array.from({length:F.chartRange},(_,i)=>F.dateOffset(i-F.chartRange+1)),values=days.map(day=>F.totalMinutes(F.sessionsFor(day))),max=Math.max(25,...values),width=900,step=width/days.length;return '<section class="focus-chart rule"><div class="section-label"><h3>Ритм вашего внимания</h3><div class="row">'+[7,30].map(n=>'<button data-range="'+n+'" aria-pressed="'+(F.chartRange===n)+'">'+n+' дней</button>').join('')+'</div></div><svg viewBox="0 0 900 230" role="img" aria-label="Минуты фокуса за '+F.chartRange+' дней"><defs><linearGradient id="bar-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="bar-stop"/><stop offset="1" class="bar-stop" stop-opacity=".12"/></linearGradient></defs>'+values.map((n,i)=>{const h=n/max*170;return '<g><title>'+days[i]+': '+n+' минут</title><rect x="'+(i*step+step*.2)+'" y="'+(185-h)+'" width="'+(step*.6)+'" height="'+Math.max(2,h)+'" rx="6" fill="url(#bar-gradient)"/><text x="'+(i*step+step*.5)+'" y="215" text-anchor="middle">'+(F.chartRange===7?new Date(days[i]+'T12:00:00').toLocaleDateString('ru-RU',{weekday:'short'}):i%5===0?days[i].slice(-2):'')+'</text></g>';}).join('')+'</svg><details><summary>Значения по дням</summary><ul class="chart-values">'+days.map((d,i)=>'<li>'+d+' — '+values[i]+' мин</li>').join('')+'</ul></details></section>';};document.addEventListener('click',e=>{const b=e.target.closest('[data-range]');if(b){F.chartRange=Number(b.dataset.range);F.render();document.querySelector('[data-range="'+F.chartRange+'"]')?.focus();}});})(FF);
+(function (F) {
+  F.chartRange = 7;
+  F.shelfWidgets.chart = () => {
+    const days = Array.from({ length: F.chartRange }, (_, i) =>
+        F.dateOffset(i - F.chartRange + 1),
+      ),
+      values = days.map((day) => F.totalMinutes(F.sessionsFor(day))),
+      max = Math.max(25, ...values),
+      width = 900,
+      step = width / days.length;
+    return (
+      '<section class="focus-chart rule"><div class="section-label"><h3>Ритм вашего внимания</h3><div class="row">' +
+      [7, 30]
+        .map(
+          (n) =>
+            '<button data-range="' +
+            n +
+            '" aria-pressed="' +
+            (F.chartRange === n) +
+            '">' +
+            n +
+            " дней</button>",
+        )
+        .join("") +
+      '</div></div><svg viewBox="0 0 900 230" role="img" aria-label="Минуты фокуса за ' +
+      F.chartRange +
+      ' дней"><defs><linearGradient id="bar-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="bar-stop"/><stop offset="1" class="bar-stop" stop-opacity=".12"/></linearGradient></defs>' +
+      values
+        .map((n, i) => {
+          const h = (n / max) * 170;
+          return (
+            "<g><title>" +
+            days[i] +
+            ": " +
+            n +
+            ' минут</title><rect x="' +
+            (i * step + step * 0.2) +
+            '" y="' +
+            (185 - h) +
+            '" width="' +
+            step * 0.6 +
+            '" height="' +
+            Math.max(2, h) +
+            '" rx="6" fill="url(#bar-gradient)"/><text x="' +
+            (i * step + step * 0.5) +
+            '" y="215" text-anchor="middle">' +
+            (F.chartRange === 7
+              ? new Date(days[i] + "T12:00:00").toLocaleDateString("ru-RU", {
+                  weekday: "short",
+                })
+              : i % 5 === 0
+                ? days[i].slice(-2)
+                : "") +
+            "</text></g>"
+          );
+        })
+        .join("") +
+      '</svg><details><summary>Значения по дням</summary><ul class="chart-values">' +
+      days
+        .map((d, i) => "<li>" + d + " — " + values[i] + " мин</li>")
+        .join("") +
+      "</ul></details></section>"
+    );
+  };
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-range]");
+    if (b) {
+      F.chartRange = Number(b.dataset.range);
+      F.render();
+      document.querySelector('[data-range="' + F.chartRange + '"]')?.focus();
+    }
+  });
+})(FF);
 
 /* Distribution groups stable task/habit IDs, preserving titles for deleted entities. */
-FF.shelfWidgets.distribution=()=>{const groups=new Map();FF.state.sessions.forEach(s=>{const key=s.taskId||s.habitId||s.title;const g=groups.get(key)||{title:s.title,color:s.color,minutes:0};g.minutes+=s.minutes;groups.set(key,g);});const total=FF.totalMinutes();return '<section class="distribution rule"><div class="section-label"><h3>Куда течёт внимание</h3><span class="mono muted">За всё время</span></div><div class="liquid-distribution" aria-hidden="true">'+[...groups.values()].map(g=>'<span style="flex:'+g.minutes+';background:var(--'+g.color+')"></span>').join('')+'</div><ul>'+([...groups.values()].map(g=>'<li><span class="session-dot" style="--layer-color:var(--'+g.color+')"></span>'+FF.esc(g.title)+'<strong>'+Math.round(g.minutes/total*100)+'% <small>· '+g.minutes+' мин</small></strong></li>').join('')||'<li>Завершите первую сессию, чтобы увидеть распределение.</li>')+'</ul></section>';};
+FF.shelfWidgets.distribution = () => {
+  const groups = new Map();
+  FF.state.sessions.forEach((s) => {
+    const key = s.taskId || s.habitId || s.title;
+    const g = groups.get(key) || { title: s.title, color: s.color, minutes: 0 };
+    g.minutes += s.minutes;
+    groups.set(key, g);
+  });
+  const total = FF.totalMinutes();
+  return (
+    '<section class="distribution rule"><div class="section-label"><h3>Куда течёт внимание</h3><span class="mono muted">За всё время</span></div><div class="liquid-distribution" aria-hidden="true">' +
+    [...groups.values()]
+      .map(
+        (g) =>
+          '<span style="flex:' +
+          g.minutes +
+          ";background:var(--" +
+          g.color +
+          ')"></span>',
+      )
+      .join("") +
+    "</div><ul>" +
+    ([...groups.values()]
+      .map(
+        (g) =>
+          '<li><span class="session-dot" style="--layer-color:var(--' +
+          g.color +
+          ')"></span>' +
+          FF.esc(g.title) +
+          "<strong>" +
+          Math.round((g.minutes / total) * 100) +
+          "% <small>· " +
+          g.minutes +
+          " мин</small></strong></li>",
+      )
+      .join("") ||
+      "<li>Завершите первую сессию, чтобы увидеть распределение.</li>") +
+    "</ul></section>"
+  );
+};
 
 /* Forecast is conditional on this week's observed pace, never a promise. */
-FF.shelfWidgets.review=()=>{const start=FF.weekKey(FF.day()),sessions=FF.state.sessions.filter(s=>s.day>=start&&s.day<=FF.day()),total=FF.totalMinutes(sessions),byDay={};sessions.forEach(s=>byDay[s.day]=(byDay[s.day]||0)+s.minutes);const best=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0],elapsed=((new Date().getDay()+6)%7)+1,goal=FF.state.settings.weeklyGoal;let forecast='Первая сессия даст начало прогнозу.';if(total>=goal)forecast='Цель этой недели уже достигнута. Можно выдохнуть.';else if(total){const extra=Math.ceil((goal-total)/(total/elapsed));const target=new Date();target.setDate(target.getDate()+extra);forecast=extra<=7-elapsed?'С таким темпом цель недели может быть достигнута '+target.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+'.':'При текущем темпе цель выходит за пределы этой недели. Можно уменьшить цель или выделить больше времени.';}return '<section class="weekly-review rule"><span class="mono muted">Ваша неделя / '+total+' из '+goal+' минут</span><h2>'+ (best?'Больше всего<br>внимания — <em>'+new Date(best[0]+'T12:00:00').toLocaleDateString('ru-RU',{weekday:'long'})+'.</em>':'Лучший момент —<br><em>начать.</em>')+'</h2><p>'+forecast+'</p><small class="muted">Прогноз основан на среднем времени с понедельника, включая пустые дни.</small></section>';};
+FF.shelfWidgets.review = () => {
+  const start = FF.weekKey(FF.day()),
+    sessions = FF.state.sessions.filter(
+      (s) => s.day >= start && s.day <= FF.day(),
+    ),
+    total = FF.totalMinutes(sessions),
+    byDay = {};
+  sessions.forEach((s) => (byDay[s.day] = (byDay[s.day] || 0) + s.minutes));
+  const best = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0],
+    elapsed = ((new Date().getDay() + 6) % 7) + 1,
+    goal = FF.state.settings.weeklyGoal;
+  let forecast = "Первая сессия даст начало прогнозу.";
+  if (total >= goal)
+    forecast = "Цель этой недели уже достигнута. Можно выдохнуть.";
+  else if (total) {
+    const extra = Math.ceil((goal - total) / (total / elapsed));
+    const target = new Date();
+    target.setDate(target.getDate() + extra);
+    forecast =
+      extra <= 7 - elapsed
+        ? "С таким темпом цель недели может быть достигнута " +
+          target.toLocaleDateString("ru-RU", {
+            day: "numeric",
+            month: "long",
+          }) +
+          "."
+        : "При текущем темпе цель выходит за пределы этой недели. Можно уменьшить цель или выделить больше времени.";
+  }
+  return (
+    '<section class="weekly-review rule"><span class="mono muted">Ваша неделя / ' +
+    total +
+    " из " +
+    goal +
+    " минут</span><h2>" +
+    (best
+      ? "Больше всего<br>внимания — <em>" +
+        new Date(best[0] + "T12:00:00").toLocaleDateString("ru-RU", {
+          weekday: "long",
+        }) +
+        ".</em>"
+      : "Лучший момент —<br><em>начать.</em>") +
+    "</h2><p>" +
+    forecast +
+    '</p><small class="muted">Прогноз основан на среднем времени с понедельника, включая пустые дни.</small></section>'
+  );
+};

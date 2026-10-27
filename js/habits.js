@@ -1,30 +1,304 @@
 /* Habits: creation, schedule and target count are explicit. */
-(function(F){
-F.habitScheduled=(h,day)=>h.frequency==='weekdays'?![0,6].includes(new Date(day+'T12:00:00').getDay()):true;
-F.habitDone=(h,day)=>h.checks[day]==='mini'||Number(h.checks[day]||0)>=h.target;
-F.habitMark=(id,day=F.day())=>F.change(s=>{const h=s.habits.find(h=>h.id===id);if(!h||!F.habitScheduled(h,day))return;const n=Number(h.checks[day])||0;h.checks[day]=n>=h.target?0:n+1;});
-F.drop=(h,day)=>'<span class="drop-shape" aria-hidden="true"><span class="drop-fill" style="height:'+(h.checks[day]==='mini'?50:Math.min(100,(Number(h.checks[day])||0)/h.target*100))+'%"></span></span>';
-F.habitDetail=h=>'';F.habitWeek=h=>'<div class="habit-week">'+Array.from({length:7},(_,i)=>F.dateOffset(i-6)).map(day=>'<button data-habit-day="'+F.esc(h.id)+'" data-day="'+day+'" aria-label="'+F.esc(h.title)+' за '+day+'" aria-pressed="'+F.habitDone(h,day)+'" '+(!F.habitScheduled(h,day)?'disabled':'')+'>'+F.drop(h,day)+'<span>'+new Date(day+'T12:00:00').toLocaleDateString('ru-RU',{weekday:'short'})+'</span><small>'+day.slice(-2)+'</small></button>').join('')+'</div>';F.habitExtra=h=>'<div class="habit-minimum"><button data-habit-mini="'+F.esc(h.id)+'" aria-pressed="'+(h.checks[F.day()]==='mini')+'">'+(h.checks[F.day()]==='mini'?'Минимум засчитан':'Сегодня — только минимум')+'</button><small class="muted">Полкапли достаточно, чтобы сохранить ритм.</small></div>';
-F.habitItem=h=>'<article class="habit-item" style="--habit-color:var(--'+h.color+')"><div class="habit-head"><div><h3>'+F.esc(h.emoji||'')+' '+F.esc(h.title)+'</h3><p class="mono muted">'+(h.frequency==='weekdays'?'По будням':'Ежедневно')+' / цель '+h.target+'</p></div><button data-habit-mark="'+F.esc(h.id)+'" aria-label="Отметить привычку: '+F.esc(h.title)+'" aria-pressed="'+F.habitDone(h,F.day())+'">'+F.drop(h,F.day())+'<span class="drop-caption">'+(F.habitDone(h,F.day())?'Готово':(Number(h.checks[F.day()])||0)+' / '+h.target)+'</span>'+'</button></div>'+F.habitDetail(h)+F.habitWeek(h)+F.habitExtra(h)+'</article>';
-F.views.habits=()=>'<div class="screen-header"><div><p class="mono muted">Маленькое, но каждый день</p><h1>Войти<br><em>в привычку.</em></h1></div><button id="new-habit" class="accent">Новая привычка '+F.icon('plus')+'</button></div><div id="habit-chain"></div><div class="habits-list">'+(F.state.habits.map(F.habitItem).join('')||'<p class="empty">Начните с маленького ритуала. Создайте первую привычку.</p>')+'</div>';
-F.newHabit=()=>{const d=F.modal('Маленький ритуал','<form id="habit-form"><label>Название<input name="title" required maxlength="80" placeholder="Например, прочитать 10 страниц"></label><label>Ваш символ (необязательно)<input name="emoji" maxlength="8" placeholder="Эмодзи на ваш выбор"></label><label>Цвет<select name="color"><option value="lime">Лайм</option><option value="coral">Коралл</option><option value="blue">Голубой</option></select></label><div class="row"><label>Частота<select name="frequency"><option value="daily">Каждый день</option><option value="weekdays">По будням</option></select></label><label>Повторений в день<input name="target" type="number" min="1" max="20" value="1" required></label></div><button class="accent">Создать привычку</button></form>');d.querySelector('form').onsubmit=e=>{e.preventDefault();const data=new FormData(e.target),title=data.get('title').trim();if(!title)return;F.change(s=>s.habits.push({id:F.uid(),title,emoji:data.get('emoji').trim(),color:data.get('color'),frequency:data.get('frequency'),target:Number(data.get('target')),checks:{}}));d.close();};};
-F.on('render',v=>{if(v==='habits')F.$('#new-habit').onclick=F.newHabit;});document.addEventListener('click',e=>{const b=e.target.closest('[data-habit-mark]');if(b)F.habitMark(b.dataset.habitMark);});
+(function (F) {
+  F.habitScheduled = (h, day) =>
+    h.frequency === "weekdays"
+      ? ![0, 6].includes(new Date(day + "T12:00:00").getDay())
+      : true;
+  F.habitDone = (h, day) =>
+    h.checks[day] === "mini" || Number(h.checks[day] || 0) >= h.target;
+  F.habitMark = (id, day = F.day()) =>
+    F.change((s) => {
+      const h = s.habits.find((h) => h.id === id);
+      if (!h || !F.habitScheduled(h, day)) return;
+      const n = Number(h.checks[day]) || 0;
+      h.checks[day] = n >= h.target ? 0 : n + 1;
+    });
+  F.drop = (h, day) =>
+    '<span class="drop-shape" aria-hidden="true"><span class="drop-fill" style="height:' +
+    (h.checks[day] === "mini"
+      ? 50
+      : Math.min(100, ((Number(h.checks[day]) || 0) / h.target) * 100)) +
+    '%"></span></span>';
+  F.habitDetail = (h) => "";
+  F.habitWeek = (h) =>
+    '<div class="habit-week">' +
+    Array.from({ length: 7 }, (_, i) => F.dateOffset(i - 6))
+      .map(
+        (day) =>
+          '<button data-habit-day="' +
+          F.esc(h.id) +
+          '" data-day="' +
+          day +
+          '" aria-label="' +
+          F.esc(h.title) +
+          " за " +
+          day +
+          '" aria-pressed="' +
+          F.habitDone(h, day) +
+          '" ' +
+          (!F.habitScheduled(h, day) ? "disabled" : "") +
+          ">" +
+          F.drop(h, day) +
+          "<span>" +
+          new Date(day + "T12:00:00").toLocaleDateString("ru-RU", {
+            weekday: "short",
+          }) +
+          "</span><small>" +
+          day.slice(-2) +
+          "</small></button>",
+      )
+      .join("") +
+    "</div>";
+  F.habitExtra = (h) =>
+    '<div class="habit-minimum"><button data-habit-mini="' +
+    F.esc(h.id) +
+    '" ' +
+    (!F.habitScheduled(h, F.day()) ? "disabled" : "") +
+    ' aria-pressed="' +
+    (h.checks[F.day()] === "mini") +
+    '">' +
+    (h.checks[F.day()] === "mini"
+      ? "Минимум засчитан"
+      : "Сегодня — только минимум") +
+    '</button><small class="muted">Полкапли достаточно, чтобы сохранить ритм.</small></div>';
+  F.habitItem = (h) =>
+    '<article class="habit-item" style="--habit-color:var(--' +
+    h.color +
+    ')"><div class="habit-head"><div><h3>' +
+    F.esc(h.emoji || "") +
+    " " +
+    F.esc(h.title) +
+    '</h3><p class="mono muted">' +
+    (h.frequency === "weekdays" ? "По будням" : "Ежедневно") +
+    " / цель " +
+    h.target +
+    '</p></div><button data-habit-mark="' +
+    F.esc(h.id) +
+    '" ' +
+    (!F.habitScheduled(h, F.day()) ? "disabled" : "") +
+    ' aria-label="Отметить привычку: ' +
+    F.esc(h.title) +
+    '" aria-pressed="' +
+    F.habitDone(h, F.day()) +
+    '">' +
+    F.drop(h, F.day()) +
+    '<span class="drop-caption">' +
+    (F.habitDone(h, F.day())
+      ? "Готово"
+      : (Number(h.checks[F.day()]) || 0) + " / " + h.target) +
+    "</span>" +
+    "</button></div>" +
+    F.habitDetail(h) +
+    F.habitWeek(h) +
+    F.habitExtra(h) +
+    "</article>";
+  F.views.habits = () =>
+    '<div class="screen-header"><div><p class="mono muted">Маленькое, но каждый день</p><h1>Войти<br><em>в привычку.</em></h1></div><button id="new-habit" class="accent">Новая привычка ' +
+    F.icon("plus") +
+    '</button></div><div id="habit-chain"></div><div class="habits-list">' +
+    (F.state.habits.map(F.habitItem).join("") ||
+      '<p class="empty">Начните с маленького ритуала. Создайте первую привычку.</p>') +
+    "</div>";
+  F.newHabit = () => {
+    const d = F.modal(
+      "Маленький ритуал",
+      '<form id="habit-form"><label>Название<input name="title" required maxlength="80" placeholder="Например, прочитать 10 страниц"></label><label>Ваш символ (необязательно)<input name="emoji" maxlength="8" placeholder="Эмодзи на ваш выбор"></label><label>Цвет<select name="color"><option value="lime">Лайм</option><option value="coral">Коралл</option><option value="blue">Голубой</option></select></label><div class="row"><label>Частота<select name="frequency"><option value="daily">Каждый день</option><option value="weekdays">По будням</option></select></label><label>Повторений в день<input name="target" type="number" min="1" max="20" value="1" required></label></div><button class="accent">Создать привычку</button></form>',
+    );
+    d.querySelector("form").onsubmit = (e) => {
+      e.preventDefault();
+      const data = new FormData(e.target),
+        title = data.get("title").trim();
+      if (!title) return;
+      F.change((s) =>
+        s.habits.push({
+          id: F.uid(),
+          title,
+          emoji: data.get("emoji").trim(),
+          color: data.get("color"),
+          frequency: data.get("frequency"),
+          target: Number(data.get("target")),
+          checks: {},
+        }),
+      );
+      d.close();
+    };
+  };
+  F.on("render", (v) => {
+    if (v === "habits") F.$("#new-habit").onclick = F.newHabit;
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-habit-mark]");
+    if (b) F.habitMark(b.dataset.habitMark);
+  });
 })(FF);
 
 /* Compact daily drops share the same actions and state. */
-FF.todayWidgets.habits=()=>'<section class="today-habits"><div><p class="mono muted">Верность маленькому</p><h3>Ваши <em>ритуалы.</em></h3></div><div class="today-drops">'+FF.state.habits.slice(0,4).map(h=>'<button data-habit-mark="'+FF.esc(h.id)+'" style="--habit-color:var(--'+h.color+')" aria-label="Отметить: '+FF.esc(h.title)+'" aria-pressed="'+FF.habitDone(h,FF.day())+'">'+FF.drop(h,FF.day())+'<span>'+FF.esc(h.title)+'</span></button>').join('')+'</div></section>';
+FF.todayWidgets.habits = () =>
+  '<section class="today-habits"><div><p class="mono muted">Верность маленькому</p><h3>Ваши <em>ритуалы.</em></h3></div><div class="today-drops">' +
+  FF.state.habits
+    .slice(0, 4)
+    .map(
+      (h) =>
+        '<button data-habit-mark="' +
+        FF.esc(h.id) +
+        '" style="--habit-color:var(--' +
+        h.color +
+        ')" ' +
+        (!FF.habitScheduled(h, FF.day()) ? "disabled" : "") +
+        ' aria-label="Отметить: ' +
+        FF.esc(h.title) +
+        '" aria-pressed="' +
+        FF.habitDone(h, FF.day()) +
+        '">' +
+        FF.drop(h, FF.day()) +
+        "<span>" +
+        FF.esc(h.title) +
+        "</span><small>" +
+        (FF.habitDone(h, FF.day())
+          ? "Готово"
+          : (Number(h.checks[FF.day()]) || 0) + " / " + h.target) +
+        "</small></button>",
+    )
+    .join("") +
+  "</div></section>";
 
-document.addEventListener('click',e=>{const b=e.target.closest('[data-habit-day]');if(b)FF.habitMark(b.dataset.habitDay,b.dataset.day);});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-habit-day]");
+  if (b) FF.habitMark(b.dataset.habitDay, b.dataset.day);
+});
 /* One automatic freeze per ISO-style local Monday week; rest days do not break a streak. */
-(function(F){
-F.weekKey=day=>{const d=new Date(day+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return F.day(d);};
-F.streak=h=>{const dates=Object.keys(h.checks).filter(d=>h.checks[d]).sort();if(!dates.length)return {current:0,best:0,frozen:[]};let current=0,best=0;const frozen=[],used=new Set();const start=new Date(dates[0]+'T12:00:00'),end=new Date(F.day()+'T12:00:00');for(let d=new Date(start),guard=0;d<=end&&guard<3660;d.setDate(d.getDate()+1),guard++){const key=F.day(d);if(!F.habitScheduled(h,key))continue;if(F.habitDone(h,key)){current++;best=Math.max(best,current);}else if(key!==F.day()){const week=F.weekKey(key);if(current&&!used.has(week)){used.add(week);frozen.push(key);}else current=0;}}return {current,best,frozen};};
-F.habitDetail=h=>{const s=F.streak(h);return '<div class="habit-streak"><span class="streak-number">'+s.current+'</span>'+F.icon('flame')+'<span>дней в ритме<br><small class="muted">Лучшая серия: '+s.best+'</small></span><span class="freeze-note mono">'+(s.frozen.some(d=>F.weekKey(d)===F.weekKey(F.day()))?'Заморозка недели использована':'1 заморозка на эту неделю')+'</span></div>';};
-F.on('render',()=>{document.querySelectorAll('[data-habit-day]').forEach(b=>{const h=F.state.habits.find(h=>h.id===b.dataset.habitDay);if(F.streak(h).frozen.includes(b.dataset.day)){b.classList.add('frozen');b.title='Заморозка сохранила серию';b.setAttribute('aria-label',b.getAttribute('aria-label')+' — заморозка');b.insertAdjacentHTML('beforeend','<span class="ice-label">лёд</span>');}});});
+(function (F) {
+  F.weekKey = (day) => {
+    const d = new Date(day + "T12:00:00");
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return F.day(d);
+  };
+  F.streak = (h) => {
+    const dates = Object.keys(h.checks)
+      .filter((d) => h.checks[d])
+      .sort();
+    if (!dates.length) return { current: 0, best: 0, frozen: [] };
+    let current = 0,
+      best = 0;
+    const frozen = [],
+      used = new Set();
+    const start = new Date(dates[0] + "T12:00:00"),
+      end = new Date(F.day() + "T12:00:00");
+    for (
+      let d = new Date(start), guard = 0;
+      d <= end && guard < 3660;
+      d.setDate(d.getDate() + 1), guard++
+    ) {
+      const key = F.day(d);
+      if (!F.habitScheduled(h, key)) continue;
+      if (F.habitDone(h, key)) {
+        current++;
+        best = Math.max(best, current);
+      } else if (key !== F.day()) {
+        const week = F.weekKey(key);
+        if (current && !used.has(week)) {
+          used.add(week);
+          frozen.push(key);
+        } else current = 0;
+      }
+    }
+    return { current, best, frozen };
+  };
+  F.habitDetail = (h) => {
+    const s = F.streak(h);
+    return (
+      '<div class="habit-streak"><span class="streak-number">' +
+      s.current +
+      "</span>" +
+      F.icon("flame") +
+      '<span>дней в ритме<br><small class="muted">Лучшая серия: ' +
+      s.best +
+      '</small></span><span class="freeze-note mono">' +
+      (s.frozen.some((d) => F.weekKey(d) === F.weekKey(F.day()))
+        ? "Заморозка недели использована"
+        : "1 заморозка на эту неделю") +
+      "</span></div>"
+    );
+  };
+  F.on("render", () => {
+    document.querySelectorAll("[data-habit-day]").forEach((b) => {
+      const h = F.state.habits.find((h) => h.id === b.dataset.habitDay);
+      if (F.streak(h).frozen.includes(b.dataset.day)) {
+        b.classList.add("frozen");
+        b.title = "Заморозка сохранила серию";
+        b.setAttribute(
+          "aria-label",
+          b.getAttribute("aria-label") + " — заморозка",
+        );
+        b.insertAdjacentHTML("beforeend", '<span class="ice-label">лёд</span>');
+      }
+    });
+  });
 })(FF);
 
-document.addEventListener('click',e=>{const b=e.target.closest('[data-habit-mini]');if(b)FF.change(s=>{const h=s.habits.find(h=>h.id===b.dataset.habitMini);if(h&&FF.habitScheduled(h,FF.day()))h.checks[FF.day()]=h.checks[FF.day()]==='mini'?0:'mini';});});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-habit-mini]");
+  if (b)
+    FF.change((s) => {
+      const h = s.habits.find((h) => h.id === b.dataset.habitMini);
+      if (h && FF.habitScheduled(h, FF.day()))
+        h.checks[FF.day()] = h.checks[FF.day()] === "mini" ? 0 : "mini";
+    });
+});
 /* Chains point only to an earlier habit, so cycles cannot be created. */
-(function(F){
-F.on('render',v=>{if(v!=='habits')return;const habits=F.state.habits;F.$('#habit-chain').innerHTML='<div class="chain"><span class="mono muted">После кофе</span>'+habits.map((h,i)=>'<span aria-hidden="true">→</span><button data-habit-mark="'+F.esc(h.id)+'" class="'+(!F.habitDone(h,F.day())&&(!h.after||F.habitDone(habits.find(p=>p.id===h.after)||h,F.day()))?'next-drop':'')+'">'+F.esc(h.title)+'</button>').join('')+'<span aria-hidden="true">→</span><a href="#timer">1 сессия фокуса</a></div>';document.querySelectorAll('.habit-item').forEach((item,i)=>{const h=habits[i];item.insertAdjacentHTML('beforeend','<label class="chain-select"><span class="mono muted">Привязать начало</span><select data-after="'+F.esc(h.id)+'"><option value="">После кофе / самостоятельно</option>'+habits.slice(0,i).map(prev=>'<option value="'+F.esc(prev.id)+'" '+(h.after===prev.id?'selected':'')+'>После «'+F.esc(prev.title)+'»</option>').join('')+'</select></label>');});});document.addEventListener('change',e=>{if(e.target.matches('[data-after]'))F.change(s=>s.habits.find(h=>h.id===e.target.dataset.after).after=e.target.value||null);});
+(function (F) {
+  F.on("render", (v) => {
+    if (v !== "habits") return;
+    const habits = F.state.habits;
+    F.$("#habit-chain").innerHTML =
+      '<div class="chain"><span class="mono muted">После кофе</span>' +
+      habits
+        .map(
+          (h, i) =>
+            '<span aria-hidden="true">→</span><button data-habit-mark="' +
+            F.esc(h.id) +
+            '" class="' +
+            (!F.habitDone(h, F.day()) &&
+            (!h.after ||
+              F.habitDone(habits.find((p) => p.id === h.after) || h, F.day()))
+              ? "next-drop"
+              : "") +
+            '">' +
+            F.esc(h.title) +
+            "</button>",
+        )
+        .join("") +
+      '<span aria-hidden="true">→</span><a href="#timer">1 сессия фокуса</a></div>';
+    document.querySelectorAll(".habit-item").forEach((item, i) => {
+      const h = habits[i];
+      item.insertAdjacentHTML(
+        "beforeend",
+        '<label class="chain-select"><span class="mono muted">Привязать начало</span><select data-after="' +
+          F.esc(h.id) +
+          '"><option value="">После кофе / самостоятельно</option>' +
+          habits
+            .slice(0, i)
+            .map(
+              (prev) =>
+                '<option value="' +
+                F.esc(prev.id) +
+                '" ' +
+                (h.after === prev.id ? "selected" : "") +
+                ">После «" +
+                F.esc(prev.title) +
+                "»</option>",
+            )
+            .join("") +
+          "</select></label>",
+      );
+    });
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.matches("[data-after]"))
+      F.change(
+        (s) =>
+          (s.habits.find((h) => h.id === e.target.dataset.after).after =
+            e.target.value || null),
+      );
+  });
 })(FF);
